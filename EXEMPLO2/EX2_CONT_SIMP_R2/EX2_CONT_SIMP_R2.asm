@@ -1,0 +1,175 @@
+;			CONTADOR SIMPLIFICADO EX2-DESBRAVANDO O PIC.
+
+;		(DESBRAVANDO O PIC. Ampliado e Atualizado para o PIC16f628A- rev12).
+
+
+
+;============================================================
+;SISTEMA SIMPLES PARA INCREMENTAR OU DECREMENTAR ATÉ UM VALOR
+; DETERMINADO POR MIM OU MAX.PRESSIONANDO O BOTAO RA2.
+
+
+;				OBJETIVO:
+
+;RESPOSTA EXERCICIO 2: VERIFICAR SE O CONTADOR MOSTRA OS VALORES (MAX) E (MIN).
+
+;===============================================================
+
+;	ARQUIVOS DE DEFINIÇÕES
+
+	#INCLUDE<P16F628A.INC>; BIBLIOTECA DE ARQUIVOS DO PIC UTILIZADO EM PROJETO.
+
+		__CONFIG _BOREN_ON & _CP_OFF & _PWRTE_ON & _WDT_OFF & _LVP_OFF & _MCLRE_ON & _XT_OSC
+
+;=========================================================================
+
+;							PAGINAÇÃO DE MEMORIAS
+
+	#DEFINE BANK0 BCF STATUS,RP0; MUDA PARA BANK 0 DA MEMORIA.
+	#DEFINE BANK1 BSF STATUS,RP0; MUDA PARA BANK 1 DA MEMORIA. 
+
+;=======================================================================
+
+;			DEFINIÇÃO E NOMES DAS VARIAVEIS A SEREM USADAS PELO SISTEMA.
+
+	CBLOCK	0X20; ENDEREÇO INICIAL DA MEMORIA.
+
+		CONTADOR	;ARMAZENA O VALOR DA CONTAGEM
+		FLAGS		;ARMAZENA OS FLGS DE CONTROLE
+		FILTRO		;FILTRO PARA O FUNCIONAMENTO CORRETO DO BOTÃO.
+	ENDC			;FINALIZA O BLOCO DE MEMORIA.
+
+;=======================================================================
+;				FLGS INTERNOS
+
+	#DEFINE	SENTIDO FLAGS,0 	;SENTIDO DO FLAG.
+						;0-SOMANDO
+						;1-SUBTRAINDO.
+
+;====================================================================
+;				CONSTANTES UTILIZADAS NO SISTEMA
+
+MIN			EQU	.01	;VALOR MINIMO PARA O CONTADOR.
+MAX			EQU	.20		;VALOR MAXIMO PARA O CONTADOR.
+T_FILTRO	EQU	.230	;FILTRO PARA FUNCIONAMENTO CORRETO DE BOTOES.
+
+;=======================================================================
+
+;			DEFINIÇÃO DAS ENTRADAS 
+
+	#DEFINE		 BOTAO	PORTA,2		;BOTAO SETADO NO BIT 2 DA PORTA.
+							;0-PRESS
+							;1-SOLTO
+
+;========================================================================
+;			DEFINIÇÃO DAS SAIDAS
+
+;========================================================================
+
+;					VETOR DE RESET
+
+	ORG 0X00		;ENDEREÇO INICIAL DE PROCESSAMENTO.
+	GOTO INICIO		; PULA PARA O INICIO DO PROGRAMA.
+
+
+;====================================================================
+
+;				VETOR DE INTERRUPÇÃO
+
+	ORG	0X04	;ENDEREÇO DO BANKO DE MEMORIA PARA INTERRUPÇÃO.
+	RETFIE		;RETORNA DO ENDEREÇO DE INTERRUPÇÃO.
+
+;====================================================================
+
+;			INICIO DO PROGRAMA
+
+INICIO
+
+	BANK1
+	MOVLW	B'00000100'
+	MOVWF	TRISA
+
+	MOVLW	B'00000000'
+	MOVWF	TRISB
+
+	MOVLW	B'10000000'
+	MOVWF	OPTION_REG
+
+	MOVLW	B'00000000'
+	MOVWF	INTCON
+
+	BANK0
+	MOVLW	B'00000111'
+	MOVWF	CMCON
+
+;====================================================================
+;		INICIALIZAÇÃO DAS VARIAVEIS
+
+	CLRF	PORTA
+	CLRF	PORTB
+	MOVLW	MIN
+	MOVWF	CONTADOR
+					
+	MOVWF	PORTB;; LINHA PARA ESCREVER O VALOR DO CONTADOR DIRETO NA SAIDA PORTB.
+
+;			ROTINA PRINCIPAL DO PROGRAMA
+
+MAIN
+	MOVLW	T_FILTRO
+	MOVWF	FILTRO
+	
+CHECA_BT
+	BTFSC	BOTAO
+	GOTO	MAIN
+	DECFSZ	FILTRO,F
+	GOTO	CHECA_BT
+
+TRATA_BT
+	BTFSS	SENTIDO
+	GOTO	SOMA
+
+SUBTRAI
+	DECF	CONTADOR,F
+	MOVLW	MIN
+	SUBWF	CONTADOR,W
+	BTFSC	STATUS,C
+	
+	GOTO	ATUALIZA
+
+	INCF	CONTADOR,F
+	BCF		SENTIDO
+	GOTO	MAIN
+
+SOMA
+	INCF	CONTADOR,F
+	MOVLW	MAX
+	SUBWF	CONTADOR,W
+	BTFSS	STATUS,C
+	
+	GOTO	ATUALIZA
+
+	BSF		SENTIDO
+	GOTO	MAIN
+
+ATUALIZA
+
+	MOVF	CONTADOR,W
+	MOVWF	PORTB
+	BTFSS	BOTAO
+	GOTO	$-1
+	GOTO	MAIN
+	
+	END
+	
+	
+	
+
+
+ 
+
+
+
+
+
+
+
