@@ -1,6 +1,6 @@
 
 
-; 									BOT E LED EXE1
+; 									BOTAO E LED EXE1
 ;									DESBRAVANDO O PIC
 
 ;							DESCRICAO DO PROJETO
